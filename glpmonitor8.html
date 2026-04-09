@@ -365,8 +365,6 @@ async function onSelectionChange() {
   }
 }
 
-// --- FIN DEL BLOQUE A REEMPLAZAR ---
-
 function renderSidebar(data) {
   const ag = data.agente, ec = data.economico;
   document.getElementById('agent-info-card').innerHTML = `
@@ -392,6 +390,7 @@ function renderSidebar(data) {
 function renderMain(data) {
   const m = document.getElementById('main-content');
   m.innerHTML = '';
+  m.appendChild(buildPrecioFinal(data));
   m.appendChild(buildKpisMes(data));
   if (data.mercado) m.appendChild(buildMercadoBanner(data));
   m.appendChild(buildTablaComparativa(data));
@@ -596,7 +595,7 @@ function formatPeriodo(p) {
 function doLogin() {
   const user = document.getElementById('login-user').value.trim();
   const pass = document.getElementById('login-pass').value.trim();
-  if (user === 'megalcampeon' && pass === 'megalelmejor') {
+  if (user === 'megal2026' && pass === 'monitorglp') {
     document.getElementById('login-overlay').style.display = 'none';
     sessionStorage.setItem('glp_auth', '1');
   } else {

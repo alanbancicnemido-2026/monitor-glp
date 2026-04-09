@@ -270,7 +270,7 @@
 
 <script>
 const CONFIG = {
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzWUBjicY6gQmWp1i6Fe02Crnk0zx4evLhBhczBF4pHx_fQVTNHWK1MG7q6qdcidkNJ6g/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxMX5RbYydLiGwx-ws2ZTPz5LViEPfcpglN1fg9lQ_S7b8OU83p-QOl8IglVqpK9KwkPA/exec',
   CHART_COLORS: { primary: '#006428', accent: '#2E9E50', textMuted: '#8AAA8A', text: '#0F1F0F', gridLine: 'rgba(0,100,40,0.06)' }
 };
 
@@ -395,7 +395,6 @@ function renderSidebar(data) {
 function renderMain(data) {
   const m = document.getElementById('main-content');
   m.innerHTML = '';
-  m.appendChild(buildPrecioFinal(data));
   m.appendChild(buildKpisMes(data));
   if (data.mercado) m.appendChild(buildMercadoBanner(data));
   m.appendChild(buildTablaComparativa(data));

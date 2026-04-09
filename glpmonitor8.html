@@ -313,79 +313,55 @@ async function loadAgentes() {
     const data = await apiFetch({ action: 'agentes' });
     const agentes = data.agentes || [];
     const sel = document.getElementById('agente-select');
-    
-    // Opciones iniciales del selector
     sel.innerHTML = '<option value="">Seleccionar agente...</option><option value="__TODOS__">— Todos los agentes —</option>';
-    
-    // Población de la lista de agentes
     [...agentes].sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(ag => {
       const o = document.createElement('option');
-      o.value = ag.nombre; 
-      o.textContent = ag.nombre;
+      o.value = ag.nombre; o.textContent = ag.nombre;
       sel.appendChild(o);
     });
-  } catch(e) { 
-    setStatus('error'); 
-    console.error("Error al cargar agentes:", e); 
+  } catch(e) { setStatus('error'); console.error(e); }
+}
+
+function buildPeriodos() {
+  const sel = document.getElementById('periodo-select');
+  sel.innerHTML = '';
+  const now = new Date();
+  for (let i = 0; i < 48; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const lbl = d.toLocaleDateString('es-UY', { month:'long', year:'numeric' });
+    const o = document.createElement('option');
+    o.value = val; o.textContent = lbl.charAt(0).toUpperCase()+lbl.slice(1);
+    if (i===1) o.selected = true;
+    sel.appendChild(o);
   }
 }
 
 async function onSelectionChange() {
   const agente = document.getElementById('agente-select').value;
   const periodo = document.getElementById('periodo-select').value;
-
-  // Validación: Se requieren ambos campos para proceder
   if (!agente || !periodo) return;
-
   setStatus('loading');
-  
-  // Mostrar estado de carga en el contenedor principal
-  document.getElementById('main-content').innerHTML = `
-    <div class="state-overlay">
-      <div class="spinner"></div>
-      <div>Cargando información del sistema...</div>
-    </div>`;
-
+  document.getElementById('main-content').innerHTML = `<div class="state-overlay"><div class="spinner"></div><div>Cargando datos...</div></div>`;
   try {
     let data;
-    // Petición diferenciada según la selección (Agente individual vs Todos)
     if (agente === '__TODOS__') {
-      data = await apiFetch({ action: 'todos', periodo });
+      data = await apiFetch({ action:'todos', periodo });
     } else {
-      data = await apiFetch({ action: 'dashboard', agente, periodo });
+      data = await apiFetch({ action:'dashboard', agente, periodo });
     }
-
-    // Validación de respuesta de la API
-    if (!data) throw new Error("La base de datos no devolvió información.");
     if (data.error) throw new Error(data.error);
-
-    // Selección de lógica de renderizado
     if (agente === '__TODOS__') {
-      // Verificación de existencia de funciones para la vista global
-      if (typeof renderSidebarTodos === 'function' && typeof renderMainTodos === 'function') {
-        renderSidebarTodos(data);
-        renderMainTodos(data);
-      } else {
-        throw new Error("Las funciones para la vista 'Todos los agentes' no están definidas.");
-      }
+      renderSidebarTodos(data);
+      renderMainTodos(data);
     } else {
-      // Vista para un agente individual
       renderSidebar(data);
       renderMain(data);
     }
-
     setStatus('active');
-
   } catch(e) {
-    console.error("Error en la aplicación:", e);
     setStatus('error');
-    // Error visual en el monitor (aquí verás si falta alguna propiedad como 'mes')
-    document.getElementById('main-content').innerHTML = `
-      <div class="state-overlay">
-        <div class="empty-icon">⚠</div>
-        <div style="color:var(--red); font-weight:bold;">Error de visualización</div>
-        <div style="font-size:11px; margin-top:8px; opacity:0.8;">${e.message}</div>
-      </div>`;
+    document.getElementById('main-content').innerHTML = `<div class="state-overlay"><div class="empty-icon">⚠</div><div style="color:var(--red)">${e.message}</div></div>`;
   }
 }
 

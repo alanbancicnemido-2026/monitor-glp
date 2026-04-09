@@ -308,18 +308,16 @@ function apiFetch(params) {
   });
 }
 
-// --- COMIENZO DEL BLOQUE A REEMPLAZAR ---
-
 async function loadAgentes() {
   try {
     const data = await apiFetch({ action: 'agentes' });
     const agentes = data.agentes || [];
     const sel = document.getElementById('agente-select');
     
-    // Seteamos las opciones iniciales
+    // Opciones iniciales del selector
     sel.innerHTML = '<option value="">Seleccionar agente...</option><option value="__TODOS__">— Todos los agentes —</option>';
     
-    // Cargamos la lista de agentes ordenada
+    // Población de la lista de agentes
     [...agentes].sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(ag => {
       const o = document.createElement('option');
       o.value = ag.nombre; 
@@ -336,41 +334,42 @@ async function onSelectionChange() {
   const agente = document.getElementById('agente-select').value;
   const periodo = document.getElementById('periodo-select').value;
 
-  // Si falta alguno de los dos campos, no disparamos la búsqueda
+  // Validación: Se requieren ambos campos para proceder
   if (!agente || !periodo) return;
 
   setStatus('loading');
   
-  // Limpiamos el contenido principal y ponemos el spinner de carga
+  // Mostrar estado de carga en el contenedor principal
   document.getElementById('main-content').innerHTML = `
     <div class="state-overlay">
       <div class="spinner"></div>
-      <div>Cargando información...</div>
+      <div>Cargando información del sistema...</div>
     </div>`;
 
   try {
     let data;
-    // Petición diferenciada según la selección
+    // Petición diferenciada según la selección (Agente individual vs Todos)
     if (agente === '__TODOS__') {
       data = await apiFetch({ action: 'todos', periodo });
     } else {
       data = await apiFetch({ action: 'dashboard', agente, periodo });
     }
 
-    // Si la API no responde o devuelve un error, lanzamos una excepción
+    // Validación de respuesta de la API
     if (!data) throw new Error("La base de datos no devolvió información.");
     if (data.error) throw new Error(data.error);
 
-    // Renderizado según el tipo de vista
+    // Selección de lógica de renderizado
     if (agente === '__TODOS__') {
-      // Verificación de seguridad: si las funciones no existen, avisamos en consola
+      // Verificación de existencia de funciones para la vista global
       if (typeof renderSidebarTodos === 'function' && typeof renderMainTodos === 'function') {
         renderSidebarTodos(data);
         renderMainTodos(data);
       } else {
-        throw new Error("Las funciones de visualización global no están cargadas.");
+        throw new Error("Las funciones para la vista 'Todos los agentes' no están definidas.");
       }
     } else {
+      // Vista para un agente individual
       renderSidebar(data);
       renderMain(data);
     }
@@ -378,13 +377,13 @@ async function onSelectionChange() {
     setStatus('active');
 
   } catch(e) {
-    console.error("Error detallado:", e);
+    console.error("Error en la aplicación:", e);
     setStatus('error');
-    // Mostramos el error visualmente para saber qué falló (como el 'reading mes')
+    // Error visual en el monitor (aquí verás si falta alguna propiedad como 'mes')
     document.getElementById('main-content').innerHTML = `
       <div class="state-overlay">
         <div class="empty-icon">⚠</div>
-        <div style="color:var(--red); font-weight:bold;">Error en la carga</div>
+        <div style="color:var(--red); font-weight:bold;">Error de visualización</div>
         <div style="font-size:11px; margin-top:8px; opacity:0.8;">${e.message}</div>
       </div>`;
   }

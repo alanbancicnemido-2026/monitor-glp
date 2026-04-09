@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA - Sistema de Gestión de Agentes Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; transition: all 0.3s ease; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- COMPONENTE: MODAL DE AGENTE ---
+        const AgentModal = ({ isOpen, onClose, onSave, editingAgent }) => {
+            const [formData, setFormData] = useState({ name: '', type: 'Soporte', status: 'Activo' });
+
+            useEffect(() => {
+                if (editingAgent) setFormData(editingAgent);
+                else setFormData({ name: '', type: 'Soporte', status: 'Activo' });
+            }, [editingAgent, isOpen]);
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-slate-800">
+                                {editingAgent ? 'Editar Agente' : 'Nuevo Agente'}
+                            </h3>
+                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Agente</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Servicio</label>
+                                <select 
+                                    className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    value={formData.type}
+                                    onChange={(e) => setFormData({...formData, type: e.target.value})}
+                                >
+                                    <option value="Soporte">Soporte</option>
+                                    <option value="Ventas">Ventas</option>
+                                    <option value="IA">Inteligencia Artificial</option>
+                                    <option value="Logística">Logística</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Estado Inicial</label>
+                                <div className="flex gap-4">
+                                    {['Activo', 'Inactivo'].map(s => (
+                                        <button 
+                                            key={s}
+                                            onClick={() => setFormData({...formData, status: s})}
+                                            className={`flex-1 py-2 rounded-lg border font-medium transition ${formData.status === s ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-200 text-slate-600'}`}
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-6 bg-slate-50 flex gap-3">
+                            <button onClick={onClose} className="flex-1 py-3 text-slate-600 font-bold">Cancelar</button>
+                            <button 
+                                onClick={() => onSave(formData)}
+                                className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-100"
+                            >
+                                Guardar Agente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENTE: LOGIN ---
+        const Login = ({ onLogin }) => {
+            const [email, setEmail] = useState('');
+            const [pass, setPass] = useState('');
+
+            return (
+                <div className="min-h-screen flex bg-white font-inter">
+                    <div className="hidden lg:flex w-1/2 bg-indigo-600 items-center justify-center p-12">
+                        <div className="max-w-md text-white">
+                            <h1 className="text-5xl font-bold mb-6">Gestiona tus agentes con precisión.</h1>
+                            <p className="text-indigo-100 text-xl leading-relaxed">Accede al panel de control centralizado para monitorear el rendimiento en tiempo real.</p>
+                        </div>
+                    </div>
+                    <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+                        <div className="w-full max-w-md">
+                            <div className="mb-10 text-center lg:text-left">
+                                <h2 className="text-4xl font-bold text-slate-800 mb-3">Iniciar Sesión</h2>
+                                <p className="text-slate-500">Introduce tus credenciales de acceso</p>
+                            </div>
+                            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onLogin(email); }}>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Correo Electrónico</label>
+                                    <input type="email" required onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-600 outline-none transition" placeholder="admin@empresa.com" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-2">Contraseña</label>
+                                    <input type="password" required onChange={e => setPass(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-600 outline-none transition" placeholder="••••••••" />
+                                </div>
+                                <button className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-xl active:scale-95">Ingresar al Sistema</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENTE: DASHBOARD ---
+        const Dashboard = ({ userEmail, onLogout }) => {
+            const [agents, setAgents] = useState([
+                { id: 1, name: "Soporte Técnico 01", type: "Soporte", status: "Activo", lastSeen: "Online" },
+                { id: 2, name: "Ventas Latam", type: "Ventas", status: "Inactivo", lastSeen: "Hace 5 min" },
+                { id: 3, name: "Bot Central IA", type: "IA", status: "Activo", lastSeen: "Online" },
+                { id: 4, name: "Logística Nacional", type: "Logística", status: "Activo", lastSeen: "Online" }
+            ]);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [editingAgent, setEditingAgent] = useState(null);
+
+            const filteredAgents = agents.filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+            const saveAgent = (data) => {
+                if (editingAgent) {
+                    setAgents(agents.map(a => a.id === editingAgent.id ? data : a));
+                } else {
+                    setAgents([...agents, { ...data, id: Date.now(), lastSeen: "Nuevo" }]);
+                }
+                setIsModalOpen(false);
+                setEditingAgent(null);
+            };
+
+            const deleteAgent = (id) => {
+                if(confirm("¿Estás seguro de eliminar este agente?")) {
+                    setAgents(agents.filter(a => a.id !== id));
+                }
+            };
+
+            return (
+                <div className="flex h-screen overflow-hidden">
+                    {/* SIDEBAR */}
+                    <aside className="w-72 bg-slate-900 text-white flex flex-col hidden md:flex">
+                        <div className="p-8 border-b border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+                                    <i className="fas fa-robot text-xl"></i>
+                                </div>
+                                <span className="text-2xl font-black tracking-tighter">AGENTS.PRO</span>
+                            </div>
+                        </div>
+                        <nav className="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar">
+                            <p className="text-xs font-bold text-slate-500 uppercase px-4 mb-4">Principal</p>
+                            <a href="#" className="flex items-center gap-4 px-4 py-3 bg-indigo-600 rounded-xl font-bold transition"><i className="fas fa-th-large"></i> Dashboard</a>
+                            <a href="#" className="flex items-center gap-4 px-4 py-3 text-slate-400 hover:bg-slate-800 rounded-xl transition"><i className="fas fa-users"></i> Mis Agentes</a>
+                            <a href="#" className="flex items-center gap-4 px-4 py-3 text-slate-400 hover:bg-slate-800 rounded-xl transition"><i className="fas fa-chart-line"></i> Estadísticas</a>
+                            <div className="pt-8">
+                                <p className="text-xs font-bold text-slate-500 uppercase px-4 mb-4">Configuración</p>
+                                <a href="#" className="flex items-center gap-4 px-4 py-3 text-slate-400 hover:bg-slate-800 rounded-xl transition"><i className="fas fa-cog"></i> Ajustes</a>
+                                <a href="#" className="flex items-center gap-4 px-4 py-3 text-slate-400 hover:bg-slate-800 rounded-xl transition"><i className="fas fa-shield-alt"></i> Seguridad</a>
+                            </div>
+                        </nav>
+                        <div className="p-6 bg-slate-950">
+                            <button onClick={onLogout} className="w-full flex items-center justify-center gap-3 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition font-bold border border-red-500/20">
+                                <i className="fas fa-sign-out-alt"></i> Cerrar Sesión
+                            </button>
+                        </div>
+                    </aside>
+
+                    {/* MAIN CONTENT */}
+                    <main className="flex-1 flex flex-col min-w-0 bg-slate-50">
+                        {/* NAVBAR (Limpio, sin barra verde) */}
+                        <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-4 flex-1">
+                                <div className="relative w-full max-w-md hidden sm:block">
+                                    <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Buscar por nombre de agente..." 
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-100 border-none rounded-2xl focus:ring-2 focus:ring-indigo-600 transition outline-none"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                                <div className="hidden sm:flex flex-col items-end">
+                                    <span className="font-bold text-slate-800">{userEmail.split('@')[0]}</span>
+                                    <span className="text-xs text-green-500 font-bold">Administrador</span>
+                                </div>
+                                <div className="w-12 h-12 bg-indigo-100 border-2 border-white shadow-sm rounded-full flex items-center justify-center text-indigo-600 font-black">
+                                    {userEmail.charAt(0).toUpperCase()}
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* CONTENIDO SCROLLABLE */}
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                            <div className="max-w-7xl mx-auto">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+                                    <div>
+                                        <h2 className="text-3xl font-black text-slate-800">Panel General</h2>
+                                        <p className="text-slate-500">Supervisando {agents.length} agentes totales</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => { setEditingAgent(null); setIsModalOpen(true); }}
+                                        className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-3 shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition active:scale-95"
+                                    >
+                                        <i className="fas fa-plus"></i> Añadir Nuevo Agente
+                                    </button>
+                                </div>
+
+                                {/* LISTA DE AGENTES (CORREGIDA PARA QUE SE VEAN TODOS) */}
+                                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-50/50 border-b border-slate-200">
+                                                <th className="p-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Información del Agente</th>
+                                                <th className="p-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Tipo</th>
+                                                <th className="p-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Estado</th>
+                                                <th className="p-6 text-xs font-bold text-slate-400 uppercase tracking-widest">Última Conexión</th>
+                                                <th className="p-6 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {filteredAgents.map(agente => (
+                                                <tr key={agente.id} className="hover:bg-slate-50/50 transition">
+                                                    <td className="p-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
+                                                                <i className="fas fa-microchip"></i>
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-slate-800">{agente.name}</p>
+                                                                <p className="text-xs text-slate-400 font-mono">ID: {agente.id}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-6">
+                                                        <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-xs font-bold">{agente.type}</span>
+                                                    </td>
+                                                    <td className="p-6">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-2 h-2 rounded-full ${agente.status === 'Activo' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-slate-300'}`}></div>
+                                                            <span className={`text-sm font-bold ${agente.status === 'Activo' ? 'text-green-600' : 'text-slate-400'}`}>{agente.status}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-6">
+                                                        <span className="text-sm text-slate-500">{agente.lastSeen}</span>
+                                                    </td>
+                                                    <td className="p-6 text-right space-x-2">
+                                                        <button 
+                                                            onClick={() => { setEditingAgent(agente); setIsModalOpen(true); }}
+                                                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                                            title="Editar"
+                                                        >
+                                                            <i className="fas fa-edit"></i>
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => deleteAgent(agente.id)}
+                                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                                                            title="Eliminar"
+                                                        >
+                                                            <i className="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    {filteredAgents.length === 0 && (
+                                        <div className="p-20 text-center">
+                                            <i className="fas fa-search text-4xl text-slate-200 mb-4"></i>
+                                            <p className="text-slate-400 font-medium">No se encontraron agentes que coincidan.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+
+                    <AgentModal 
+                        isOpen={isModalOpen} 
+                        onClose={() => { setIsModalOpen(false); setEditingAgent(null); }} 
+                        onSave={saveAgent} 
+                        editingAgent={editingAgent}
+                    />
+                </div>
+            );
+        };
+
+        // --- APP PRINCIPAL ---
+        const App = () => {
+            const [isLogged, setIsLogged] = useState(false);
+            const [userEmail, setUserEmail] = useState('');
+
+            return (
+                <div className="antialiased">
+                    {!isLogged ? (
+                        <Login onLogin={(email) => { setUserEmail(email); setIsLogged(true); }} />
+                    ) : (
+                        <Dashboard userEmail={userEmail} onLogout={() => setIsLogged(false)} />
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

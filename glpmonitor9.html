@@ -332,7 +332,7 @@
   </div>
 </div>
 
-<div class="app-shell">
+<div class="app-shell" id="app-shell" style="display:none">
 
   <header class="header">
     <div class="header-logo">
@@ -383,14 +383,14 @@ const CONFIG = {
 
 let chartHistorico = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initEstadisticas() {
   setStatus('loading');
   buildPeriodos();
   await loadAgentes();
   setStatus('active');
   document.getElementById('agente-select').addEventListener('change', onSelectionChange);
   document.getElementById('periodo-select').addEventListener('change', onSelectionChange);
-});
+}
 
 function setStatus(s) { document.getElementById('status-dot').className = 'status-dot ' + s; }
 
@@ -706,7 +706,7 @@ function formatPeriodo(p) {
 function doLogin() {
   const user = document.getElementById('login-user').value.trim();
   const pass = document.getElementById('login-pass').value.trim();
-  if (user === 'megalcampeon' && pass === 'megalelmejor') {
+  if (user === 'megal2026' && pass === 'monitorglp') {
     document.getElementById('login-overlay').style.display = 'none';
     sessionStorage.setItem('glp_auth', '1');
     showHome();
@@ -728,7 +728,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('login-overlay').style.display = 'flex';
     document.getElementById('home-overlay').style.display = 'none';
     document.getElementById('ranking-shell').style.display = 'none';
-    document.querySelector('.app-shell').style.display = 'none';
+    document.getElementById('app-shell').style.display = 'none';
   } else {
     document.getElementById('login-overlay').style.display = 'none';
     showHome();
@@ -802,19 +802,20 @@ function renderMainTodos(data) {
 // ── NAVIGATION ────────────────────────────────────────────────────────
 function showHome() {
   document.getElementById('home-overlay').style.display = 'flex';
-  document.querySelector('.app-shell').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'none';
   document.getElementById('ranking-shell').style.display = 'none';
 }
 
 function goTo(section) {
   document.getElementById('home-overlay').style.display = 'none';
-  document.querySelector('.app-shell').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'none';
   document.getElementById('ranking-shell').style.display = 'none';
 
   if (section === 'home') {
     showHome();
   } else if (section === 'estadisticas') {
-    document.querySelector('.app-shell').style.display = 'grid';
+    document.getElementById('app-shell').style.display = 'grid';
+    if (!window._estadisticasReady) { window._estadisticasReady = true; initEstadisticas(); }
   } else if (section === 'ranking') {
     document.getElementById('ranking-shell').style.display = 'flex';
     initRanking();
